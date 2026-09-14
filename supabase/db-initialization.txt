@@ -1,0 +1,16 @@
+--//--------------------------------------------- 
+--sensors table
+
+CREATE TABLE sensors(
+	id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+	mac_address varchar(200),
+	ip_address varchar(200),
+	location varchar(200),
+	temperature FLOAT,
+	pressure FLOAT,
+	humidity FLOAT,
+	altitude FLOAT,
+	created_at timestamptz DEFAULT now()
+);
+
+alter publication supabase_realtime add table sensors;
