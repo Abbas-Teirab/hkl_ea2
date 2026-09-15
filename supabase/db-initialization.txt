@@ -6,6 +6,7 @@ CREATE TABLE sensors(
 	mac_address varchar(200),
 	ip_address varchar(200),
 	location varchar(200),
+	locked BOOLEAN,
 	temperature FLOAT,
 	pressure FLOAT,
 	humidity FLOAT,

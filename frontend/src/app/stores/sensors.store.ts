@@ -2,7 +2,7 @@ import { signalStore, withState, withMethods, withHooks, patchState } from '@ngr
 import { tapResponse } from '@ngrx/operators';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { inject } from '@angular/core';
-import { ISupabaseConfig, SupabaseApi } from '../../supabase';
+import { SupabaseConfig, SupabaseToken } from '../../supabase';
 import { switchMap, tap } from 'rxjs/operators';
 import { from, pipe } from 'rxjs';
 import { Reading } from '../interfaces/sensors';
@@ -17,7 +17,7 @@ export const SensorsStore = signalStore(
     loading: true,
     readings: [],
   }),
-  withMethods((store, supabase: ISupabaseConfig = inject(SupabaseApi)) => ({
+  withMethods((store, supabase: SupabaseConfig = inject(SupabaseToken)) => ({
     loadSensors: rxMethod<void>(
       pipe(
         tap(() => patchState(store, { loading: true })),

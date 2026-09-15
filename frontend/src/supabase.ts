@@ -1,11 +1,11 @@
 import { InjectionToken, isDevMode } from '@angular/core';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-export interface ISupabaseConfig {
+export interface SupabaseConfig {
   supabase: SupabaseClient;
 }
 
-export const SupabaseApi = new InjectionToken<ISupabaseConfig>('Supabase SDK', {
+export const SupabaseToken = new InjectionToken<SupabaseConfig>('Supabase SDK', {
   providedIn: 'root',
   factory() {
     const supabaseURL: string = 'http://localhost:8000';

@@ -3,9 +3,10 @@ export interface Reading {
   created_at: string;
   mac_address: string;
   ip_address: string;
+  locked: number;
   location: string;
   temperature: number;
   humidity: number;
-  oxygen: number;
-  conductivity: number;
+  pressure: number;
+  altitude: number;
 }
