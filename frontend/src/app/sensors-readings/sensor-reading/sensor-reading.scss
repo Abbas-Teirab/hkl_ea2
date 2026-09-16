@@ -1,0 +1,17 @@
+@use '@angular/material' as mat;
+
+.card {
+  @include mat.card-overrides(
+    (
+      elevated-container-color: white,
+    )
+  );
+}
+
+.open {
+  color: red;
+}
+
+.locked {
+  color: green;
+}

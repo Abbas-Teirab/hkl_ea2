@@ -5,40 +5,40 @@ import { inject } from '@angular/core';
 import { SupabaseConfig, SupabaseToken } from '../../supabase';
 import { switchMap, tap } from 'rxjs/operators';
 import { from, pipe } from 'rxjs';
-import { Sensor } from '../interfaces/sensors';
+import { Lock } from '../interfaces/locks';
 
-interface SensorsState {
+interface LocksState {
   loading: boolean;
-  sensors: Sensor[];
+  locks: Lock[];
 }
-export const SensorsStore = signalStore(
+export const LocksStore = signalStore(
   { providedIn: 'root' },
-  withState<SensorsState>({
+  withState<LocksState>({
     loading: true,
-    sensors: [],
+    locks: [],
   }),
   withMethods((store, supabase: SupabaseConfig = inject(SupabaseToken)) => ({
-    loadSensors: rxMethod<void>(
+    loadLocks: rxMethod<void>(
       pipe(
         tap(() => patchState(store, { loading: true })),
         switchMap(() =>
           from(
-            supabase.supabase.from('sensors').select('*').order('created_at', { ascending: false }),
+            supabase.supabase.from('locks').select('*').order('created_at', { ascending: false }),
           ),
         ),
         tapResponse({
-          next: ({ data, error }) => patchState(store, { loading: false, sensors: data ?? [] }),
+          next: ({ data, error }) => patchState(store, { loading: false, locks: data ?? [] }),
           error: (e) => {
-            patchState(store, { loading: false, sensors: [] });
+            patchState(store, { loading: false, locks: [] });
           },
-          finalize: () => patchState(store, { loading: false, sensors: [] }),
+          finalize: () => patchState(store, { loading: false, locks: [] }),
         }),
       ),
     ),
   })),
   withHooks({
-    onInit({ loadSensors }) {
-      loadSensors();
+    onInit({ loadLocks }) {
+      loadLocks();
     },
     onDestroy(store) {
       console.log('On destroy');

@@ -1,0 +1,47 @@
+<div class="w-160">
+  <div class="py-4 mb-4 flex items-center gap-x-2">
+    <mat-icon>lock_open</mat-icon>
+    <h1 class="text-2xl font-bold">Locks Triggers</h1>
+  </div>
+  <mat-form-field>
+    <mat-label>Search</mat-label>
+    <input matInput placeholder="Name, Location" [formField]="form.search" />
+    <mat-icon matSuffix>search</mat-icon>
+  </mat-form-field>
+  <table
+    mat-table
+    matSort
+    aria-label="Nodes table"
+    [dataSource]="datasource()"
+    (matSortChange)="onSort($event)"
+  >
+    <!-- Name Column -->
+    <ng-container matColumnDef="name">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>Name</th>
+      <td mat-cell *matCellDef="let lock">{{ lock.name }}</td>
+    </ng-container>
+
+    <!-- Locked Column -->
+    <ng-container matColumnDef="locked">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>Locked</th>
+      <td mat-cell *matCellDef="let lock">{{ lock.locked }}</td>
+    </ng-container>
+
+    <!-- Created At Column -->
+    <ng-container matColumnDef="created_at">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>Created At</th>
+      <td mat-cell *matCellDef="let lock">{{ lock.created_at }}</td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+  </table>
+  <mat-paginator
+    [length]="datasource().length"
+    [pageSize]="pageSize()"
+    [pageIndex]="pageIndex()"
+    [pageSizeOptions]="[10, 20, 50]"
+    (page)="onPage($event)"
+    aria-label="Locks pagination"
+  />
+</div>

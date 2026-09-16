@@ -1,11 +1,22 @@
 --//--------------------------------------------- 
+--nodes table
+
+CREATE TABLE nodes(
+	id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+	name TEXT,
+	location TEXT,
+	enabled BOOLEAN DEFAULT TRUE,
+	created_at timestamptz DEFAULT now()
+);
+
+--//--------------------------------------------- 
 --sensors table
 
 CREATE TABLE sensors(
 	id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
-	mac_address varchar(200),
-	ip_address varchar(200),
-	location varchar(200),
+	name TEXT,
+	mac_address TEXT,
+	ip_address TEXT,
 	locked BOOLEAN DEFAULT TRUE,
 	temperature FLOAT,
 	pressure FLOAT,
@@ -14,15 +25,16 @@ CREATE TABLE sensors(
 	created_at timestamptz DEFAULT now()
 );
 
-alter publication supabase_realtime add table locks;
+alter publication supabase_realtime add table sensors;
+
 --//--------------------------------------------- 
 --locks table
 
 CREATE TABLE locks(
 	id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
-	mac_address varchar(200),
-	ip_address varchar(200),
-	location varchar(200),
+	name TEXT,
+	mac_address TEXT,
+	ip_address TEXT,
 	locked BOOLEAN DEFAULT TRUE,
 	created_at timestamptz DEFAULT now()
 );

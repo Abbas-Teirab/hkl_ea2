@@ -1,0 +1,24 @@
+@use '@angular/material' as mat;
+table {
+  @include mat.table-overrides(
+    (
+      background-color: white,
+    )
+  );
+}
+
+mat-paginator {
+  @include mat.paginator-overrides(
+    (
+      container-background-color: white,
+    )
+  );
+}
+
+mat-form-field {
+  @include mat.form-field-overrides(
+    (
+      filled-container-color: white,
+    )
+  );
+}

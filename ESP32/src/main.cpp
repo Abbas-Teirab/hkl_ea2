@@ -21,7 +21,8 @@
 Adafruit_BME280 bme; 
 OneWire oneWire(33);
 DallasTemperature sensors(&oneWire);
-const String SERVICE_ROLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJpYXQiOjE3ODkzNjc3NjAsImV4cCI6MTk0NzA0Nzc2MH0.HC39l6omcv2FQfBEFPWTNLet2h8DdndSOJsnwUKaYmY";
+const char* name="Node 1";
+const char* SERVICE_ROLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJpYXQiOjE3ODkzNjc3NjAsImV4cCI6MTk0NzA0Nzc2MH0.HC39l6omcv2FQfBEFPWTNLet2h8DdndSOJsnwUKaYmY";
 const char* SUPABASE_HOST = "192.168.0.232";
 const uint16_t SUPABASE_PORT = 8000;
 const char* SUPABASE_SENSORS_PATH = "/rest/v1/sensors";
@@ -95,7 +96,7 @@ void sendSensorsValues()
 
   JsonDocument doc;
 
-  doc["location"] = "Server Room";
+  doc["name"] = name;
   doc["mac_address"] = ETH.macAddress();
   doc["ip_address"] = ETH.localIP().toString();
   doc["locked"] = lockStableState;
@@ -223,7 +224,7 @@ void sendLockState(bool locked)
 
   JsonDocument doc;
 
-  doc["location"] = "Server Room";
+  doc["name"] = name;
   doc["mac_address"] = ETH.macAddress();
   doc["ip_address"] = ETH.localIP().toString();
   doc["locked"] = locked;
