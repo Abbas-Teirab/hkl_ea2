@@ -17,13 +17,23 @@ export const SensorsStore = signalStore(
     loading: true,
     sensors: [],
   }),
-  withMethods((store, supabase: SupabaseConfig = inject(SupabaseToken)) => ({
+  withMethods((store, supabaseConfig: SupabaseConfig = inject(SupabaseToken)) => ({
+    fetchNodeData: async (node: string) => {
+      const { data, error } = await supabaseConfig.supabase
+        .from('sensors')
+        .select('*')
+        .eq('name', node);
+      return { data, error };
+    },
     loadSensors: rxMethod<void>(
       pipe(
         tap(() => patchState(store, { loading: true })),
         switchMap(() =>
           from(
-            supabase.supabase.from('sensors').select('*').order('created_at', { ascending: false }),
+            supabaseConfig.supabase
+              .from('sensors')
+              .select('*')
+              .order('created_at', { ascending: false }),
           ),
         ),
         tapResponse({

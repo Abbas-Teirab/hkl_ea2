@@ -18,6 +18,12 @@ export const NodesStore = signalStore(
     nodes: [],
   }),
   withMethods((store, supabase: SupabaseConfig = inject(SupabaseToken)) => ({
+    createNode: async (node: Node) => {
+      const { data, error } = await supabase.supabase.from('nodes').insert(node);
+    },
+    updateNode: async (node: Node) => {
+      const { data, error } = await supabase.supabase.from('nodes').update(node).eq('id', node.id);
+    },
     loadNodes: rxMethod<void>(
       pipe(
         tap(() => patchState(store, { loading: true })),

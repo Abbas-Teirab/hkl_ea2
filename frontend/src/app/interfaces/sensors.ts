@@ -1,5 +1,6 @@
 export interface Sensor {
   id?: string;
+  created_at?: string;
   name: string;
   mac_address: string;
   ip_address: string;
@@ -8,5 +9,4 @@ export interface Sensor {
   humidity: number;
   pressure: number;
   altitude: number;
-  created_at: string;
 }

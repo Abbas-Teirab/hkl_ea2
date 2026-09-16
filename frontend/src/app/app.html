@@ -9,17 +9,17 @@
         (click)="closeSidenavOnMobile()"
       >
         <mat-icon matListItemIcon>speed</mat-icon>
-        <span matListItemTitle>Sensors Readings</span>
+        <span matListItemTitle>Current Readings</span>
       </a>
       <a
         mat-list-item
         routerLinkActive="active-link"
-        [routerLink]="'/main/nodes-list'"
+        [routerLink]="'/main/nodes-configuration'"
         [routerLinkActiveOptions]="{ exact: true }"
         (click)="closeSidenavOnMobile()"
       >
         <mat-icon matListItemIcon>hub</mat-icon>
-        <span matListItemTitle>Nodes List</span>
+        <span matListItemTitle>Nodes Configuration</span>
       </a>
       <a
         mat-list-item
@@ -32,7 +32,6 @@
         <span matListItemTitle>Locks Triggers</span>
       </a>
       <a
-        disabled
         mat-list-item
         routerLinkActive="active-link"
         [routerLink]="'/main/statistics'"

@@ -5,21 +5,31 @@ import { NgxGaugeModule } from 'ngx-gauge';
 import { Sensor } from '../../interfaces/sensors';
 import { formatNumber, DatePipe } from '@angular/common';
 import { NodesStore } from '../../stores/nodes.store';
+import { RouterLink } from '@angular/router';
+import { addMinutes, differenceInMinutes } from 'date-fns';
 
 @Component({
-  imports: [MatCardModule, MatIconModule, NgxGaugeModule, DatePipe],
+  imports: [MatCardModule, MatIconModule, NgxGaugeModule, DatePipe, RouterLink],
   selector: 'app-sensor-reading',
   styleUrl: './sensor-reading.scss',
   templateUrl: './sensor-reading.html',
 })
 export class SensorReading {
   private nodes_store = inject(NodesStore);
-  size = 80;
+  size = 100;
   thick = 4;
+
+  sensor_reading = input.required<Sensor>();
+
   node = computed(() =>
     this.nodes_store.nodes().find((n) => n.name === this.sensor_reading().name),
   );
-  sensor_reading = input.required<Sensor>();
+  is_online = computed(() => {
+    const creation = this.sensor_reading().created_at
+      ? new Date(this.sensor_reading().created_at as string)
+      : addMinutes(new Date(), -10);
+    return differenceInMinutes(new Date(), creation) < 5;
+  });
   formatted_temperature_value = computed(() =>
     parseFloat(formatNumber(this.sensor_reading().temperature, 'en-US', '1.1-1')),
   );
@@ -33,6 +43,24 @@ export class SensorReading {
     parseFloat(formatNumber(this.sensor_reading().humidity, 'en-US', '1.1-1')),
   );
   humidity_thresholds = {
+    '0': { color: 'green' },
+    '30': { color: 'orange' },
+    '60': { color: 'red' },
+  };
+  //-------------------------------------------------
+  formatted_pressure_value = computed(() =>
+    parseFloat(formatNumber(this.sensor_reading().pressure, 'en-US', '2.2-2')),
+  );
+  pressure_thresholds = {
+    '0': { color: 'green' },
+    '30': { color: 'orange' },
+    '60': { color: 'red' },
+  };
+  //-------------------------------------------------
+  formatted_altitude_value = computed(() =>
+    parseFloat(formatNumber(this.sensor_reading().altitude, 'en-US', '1.1-1')),
+  );
+  altitude_thresholds = {
     '0': { color: 'green' },
     '30': { color: 'orange' },
     '60': { color: 'red' },

@@ -14,7 +14,6 @@ import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { Node } from '../interfaces/nodes';
 import { NodeDialog } from './node-dialog/node-dialog';
-import { TitleCasePipe } from '@angular/common';
 
 @Component({
   imports: [
@@ -29,13 +28,12 @@ import { TitleCasePipe } from '@angular/common';
     MatPaginatorModule,
     MatTooltipModule,
     FormField,
-    TitleCasePipe,
   ],
-  selector: 'app-nodes-list',
-  styleUrl: './nodes-list.scss',
-  templateUrl: './nodes-list.html',
+  selector: 'app-nodes-configuration',
+  styleUrl: './nodes-configuration.scss',
+  templateUrl: './nodes-configuration.html',
 })
-export class NodesList {
+export class NodesConfiguration {
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
   private nodesStore = inject(NodesStore);
@@ -48,7 +46,7 @@ export class NodesList {
   protected readonly filterStatus = signal('');
   protected readonly sortField = signal<keyof Node>('name');
   protected readonly sortDir = signal<'asc' | 'desc'>('asc');
-  loading = this.nodesStore.loading;
+  private dialog_loading = signal(false);
 
   nodes = computed(() => {
     const search_term = this.model().search.toLowerCase() ?? '';
@@ -70,6 +68,7 @@ export class NodesList {
   });
 
   datasource = computed(() => this.nodes());
+  loading = computed(() => this.nodesStore.loading() || this.dialog_loading());
 
   model = signal({
     search: '',
@@ -86,6 +85,15 @@ export class NodesList {
 
     ref.afterClosed().subscribe(async (result: Node | undefined) => {
       if (!result) return;
+      this.dialog_loading.set(true);
+      if (result.id) {
+        await this.nodesStore.updateNode(result);
+      } else {
+        await this.nodesStore.createNode(result);
+      }
+      this.snackBar.open('Node saved successfully', 'Close', { duration: 3000 });
+      this.dialog_loading.set(false);
+      this.nodesStore.loadNodes();
     });
   }
   protected onSort(sort: Sort) {

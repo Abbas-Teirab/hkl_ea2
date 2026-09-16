@@ -1,12 +1,16 @@
-<mat-card button class="card w-72">
+<mat-card button class="card w-140 h-64 cursor-pointer" [routerLink]="['./', node()?.name]">
   <div class="p-4 flex items-center justify-between">
     <div class="flex items-center gap-x-1">
-      <mat-icon [class.locked]="sensor_reading().locked" [class.open]="!sensor_reading().locked">{{
-        sensor_reading().locked ? 'lock' : 'lock_open'
+      <mat-icon [class.green]="is_online()" [class.red]="!is_online()">{{
+        is_online() ? 'flash_on' : 'flash_off'
       }}</mat-icon>
-      <span class="font-bold text-xl">
-        {{ node()?.name }}
-      </span>
+      <div>
+        <span class="font-bold text-xl">
+          {{ node()?.name }}
+        </span>
+        <br />
+        <span class="text-xs">{{ sensor_reading()?.ip_address }}</span>
+      </div>
     </div>
     <div class="flex justify-end items-center gap-x-1">
       <mat-icon>location_on</mat-icon>
@@ -14,41 +18,84 @@
     </div>
   </div>
   <mat-card-content>
-    <div class="flex justify-evenly items-center">
-      <ngx-gauge
-        type="full"
-        cap="round"
-        [size]="size"
-        [thick]="thick"
-        [duration]="1000"
-        [value]="formatted_temperature_value()"
-        [append]="'C'"
-        [thresholds]="temperature_thresholds"
-      />
-      <ngx-gauge
-        type="full"
-        cap="round"
-        [size]="size"
-        [thick]="thick"
-        [duration]="1000"
-        [value]="formatted_humidity_value()"
-        [append]="'%'"
-        [thresholds]="humidity_thresholds"
-      />
-    </div>
+    @if (sensor_reading()?.ip_address === 'N/A') {
+      <div class="h-32 italic flex justify-center items-center text-center text-gray-700">
+        Data is not available for this node!
+      </div>
+    } @else {
+      <div class="h-32 flex justify-evenly items-center">
+        <div class="flex flex-col items-center">
+          <ngx-gauge
+            type="full"
+            cap="round"
+            [size]="size"
+            [thick]="thick"
+            [duration]="1000"
+            [value]="formatted_temperature_value()"
+            [append]="'C'"
+            [thresholds]="temperature_thresholds"
+          />
+          <p class="font-bold">Temperature</p>
+        </div>
+        <div class="flex flex-col items-center">
+          <ngx-gauge
+            type="full"
+            cap="round"
+            [size]="size"
+            [thick]="thick"
+            [duration]="1000"
+            [value]="formatted_humidity_value()"
+            [append]="'%'"
+            [thresholds]="humidity_thresholds"
+          />
+          <p class="font-bold">Humidity</p>
+        </div>
+        <div class="flex flex-col items-center">
+          <ngx-gauge
+            type="full"
+            cap="round"
+            [size]="size"
+            [thick]="thick"
+            [duration]="1000"
+            [value]="formatted_pressure_value()"
+            [append]="'hPa'"
+            [thresholds]="pressure_thresholds"
+          />
+          <p class="font-bold">Pressure</p>
+        </div>
+        <div class="flex flex-col items-center">
+          <ngx-gauge
+            type="full"
+            cap="round"
+            [size]="size"
+            [thick]="thick"
+            [duration]="1000"
+            [value]="formatted_altitude_value()"
+            [append]="'m'"
+            [thresholds]="altitude_thresholds"
+          />
+          <p class="font-bold">Altitude</p>
+        </div>
+      </div>
+    }
   </mat-card-content>
   <div class="p-4 flex justify-between items-end">
-    <div class="flex items-center gap-x-1">
-      <mat-icon>calendar_month</mat-icon>
-      <span class="text-xs">
-        {{ sensor_reading().created_at | date: 'dd MMM yyyy' }}
-      </span>
+    <div class="flex items-center gap-x-4">
+      <div class="flex items-center gap-x-1">
+        <mat-icon>calendar_month</mat-icon>
+        <span class="text-xs">
+          {{ sensor_reading().created_at | date: 'dd MMM yyyy' }}
+        </span>
+      </div>
+      <div class="flex justify-end items-center gap-x-1">
+        <mat-icon>watch_later</mat-icon>
+        <span class="text-xs">
+          {{ sensor_reading().created_at | date: 'HH:mm:ss' }}
+        </span>
+      </div>
     </div>
-    <div class="flex justify-end items-center gap-x-1">
-      <mat-icon>watch_later</mat-icon>
-      <span class="text-xs">
-        {{ sensor_reading().created_at | date: 'HH:mm:ss' }}
-      </span>
-    </div>
+    <mat-icon [class.green]="sensor_reading()?.locked" [class.red]="!sensor_reading()?.locked">{{
+      sensor_reading()?.locked ? 'lock' : 'lock_open'
+    }}</mat-icon>
   </div>
 </mat-card>

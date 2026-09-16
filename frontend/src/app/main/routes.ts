@@ -12,8 +12,9 @@ export const routes: Routes = [
     component: Main,
     children: [
       {
-        path: 'nodes-list',
-        loadComponent: () => import('../nodes-list/nodes-list').then((m) => m.NodesList),
+        path: 'nodes-configuration',
+        loadComponent: () =>
+          import('../nodes-configuration/nodes-configuration').then((m) => m.NodesConfiguration),
       },
       {
         path: 'sensors-readings',
@@ -28,6 +29,13 @@ export const routes: Routes = [
       {
         path: 'statistics',
         loadComponent: () => import('../statistics/statistics').then((m) => m.Statistics),
+      },
+      {
+        path: 'sensors-readings/:id',
+        loadComponent: () =>
+          import('../sensors-readings/sensors-history-readings/sensors-history-readings').then(
+            (m) => m.SensorsHistoryReadings,
+          ),
       },
     ],
   },
