@@ -1,1 +1,105 @@
-<p>statistics works!</p>
+<div class="py-4 mb-4 flex items-center gap-x-2">
+  <mat-icon>bar_chart</mat-icon>
+  <h1 class="text-2xl font-bold">Statistics</h1>
+</div>
+<div>
+  <mat-form-field>
+    <mat-label>Select a date range</mat-label>
+    <mat-date-range-input #dateRange [rangePicker]="picker" [max]="today">
+      <input matStartDate placeholder="From" class="opacity-100 text-xs" [formField]="form.from" />
+      <input matEndDate placeholder="To" class="opacity-100 text-xs" [formField]="form.to" />
+    </mat-date-range-input>
+    <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+    <mat-date-range-picker #picker />
+  </mat-form-field>
+</div>
+<div class="flex mb-6">
+  <mat-card>
+    <mat-card-header>
+      <mat-card-title>Bubble Chart</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <app-bubble-chart
+        title="Comparision"
+        xAxisTitle="Temperature"
+        yAxisTitle="Humidity"
+        [minX]="0"
+        [maxX]="100"
+        [minY]="0"
+        [maxY]="100"
+        [legends]="nodes().map((node) => node.name)"
+        [values]="bubble_values()"
+      />
+    </mat-card-content>
+  </mat-card>
+</div>
+<div class="flex flex-wrap gap-4">
+  <mat-card>
+    <mat-card-header>
+      <mat-card-title>Average Temperatures</mat-card-title>
+      <!-- <mat-card-subtitle>Temperature readings from all nodes</mat-card-subtitle> -->
+    </mat-card-header>
+    <mat-card-content>
+      <app-bar-chart
+        [title]="'Average Temperatures'"
+        [xAxisTitle]="'Nodes'"
+        [yAxisTitle]="'Temperature (°C)'"
+        [color]="'#FF6384'"
+        [barThickness]="14"
+        [labels]="nodes().map((node) => node.name)"
+        [values]="average_temperatures()"
+      />
+    </mat-card-content>
+  </mat-card>
+  <mat-card>
+    <mat-card-header>
+      <mat-card-title>Average Humidity</mat-card-title>
+      <!-- <mat-card-subtitle>Humidity readings from all nodes</mat-card-subtitle> -->
+    </mat-card-header>
+    <mat-card-content>
+      <app-bar-chart
+        [title]="'Average Humidity'"
+        [xAxisTitle]="'Nodes'"
+        [yAxisTitle]="'Humidity (%)'"
+        [color]="'#36A2EB'"
+        [barThickness]="14"
+        [labels]="nodes().map((node) => node.name)"
+        [values]="average_humidity()"
+      />
+    </mat-card-content>
+  </mat-card>
+  <mat-card>
+    <mat-card-header>
+      <mat-card-title>Average Pressure</mat-card-title>
+      <!-- <mat-card-subtitle>Pressure readings from all nodes</mat-card-subtitle> -->
+    </mat-card-header>
+    <mat-card-content>
+      <app-bar-chart
+        [title]="'Average Pressure'"
+        [xAxisTitle]="'Nodes'"
+        [yAxisTitle]="'Pressure (hPa)'"
+        [color]="'#FFCE56'"
+        [barThickness]="14"
+        [labels]="nodes().map((node) => node.name)"
+        [values]="average_pressure()"
+      />
+    </mat-card-content>
+  </mat-card>
+  <mat-card>
+    <mat-card-header>
+      <mat-card-title>Average Altitude</mat-card-title>
+      <!-- <mat-card-subtitle>Altitude readings from all nodes</mat-card-subtitle> -->
+    </mat-card-header>
+    <mat-card-content>
+      <app-bar-chart
+        [title]="'Average Altitude'"
+        [xAxisTitle]="'Nodes'"
+        [yAxisTitle]="'Altitude (m)'"
+        [color]="'#4BC0C0'"
+        [barThickness]="14"
+        [labels]="nodes().map((node) => node.name)"
+        [values]="average_altitude()"
+      />
+    </mat-card-content>
+  </mat-card>
+</div>

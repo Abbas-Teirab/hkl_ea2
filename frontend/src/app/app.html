@@ -14,16 +14,6 @@
       <a
         mat-list-item
         routerLinkActive="active-link"
-        [routerLink]="'/main/nodes-configuration'"
-        [routerLinkActiveOptions]="{ exact: true }"
-        (click)="closeSidenavOnMobile()"
-      >
-        <mat-icon matListItemIcon>hub</mat-icon>
-        <span matListItemTitle>Nodes Configuration</span>
-      </a>
-      <a
-        mat-list-item
-        routerLinkActive="active-link"
         [routerLink]="'/main/locks-triggers'"
         [routerLinkActiveOptions]="{ exact: true }"
         (click)="closeSidenavOnMobile()"
@@ -40,6 +30,27 @@
       >
         <mat-icon matListItemIcon>bar_chart</mat-icon>
         <span matListItemTitle>Statistics</span>
+      </a>
+      <a
+        mat-list-item
+        routerLinkActive="active-link"
+        [routerLink]="'/main/nodes-configuration'"
+        [routerLinkActiveOptions]="{ exact: true }"
+        (click)="closeSidenavOnMobile()"
+      >
+        <mat-icon matListItemIcon>hub</mat-icon>
+        <span matListItemTitle>Nodes Configuration</span>
+      </a>
+      <a
+        disabled
+        mat-list-item
+        routerLinkActive="active-link"
+        [routerLink]="'/main/data-export'"
+        [routerLinkActiveOptions]="{ exact: true }"
+        (click)="closeSidenavOnMobile()"
+      >
+        <mat-icon matListItemIcon>download</mat-icon>
+        <span matListItemTitle>Data Export</span>
       </a>
     </mat-nav-list>
   </mat-sidenav>

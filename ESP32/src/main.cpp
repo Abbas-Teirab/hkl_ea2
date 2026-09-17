@@ -21,7 +21,7 @@
 Adafruit_BME280 bme; 
 OneWire oneWire(33);
 DallasTemperature sensors(&oneWire);
-const char* name="Node 1";
+const char* name="Node X";
 const char* SERVICE_ROLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJpYXQiOjE3ODkzNjc3NjAsImV4cCI6MTk0NzA0Nzc2MH0.HC39l6omcv2FQfBEFPWTNLet2h8DdndSOJsnwUKaYmY";
 const char* SUPABASE_HOST = "192.168.0.232";
 const uint16_t SUPABASE_PORT = 8000;
@@ -38,7 +38,9 @@ bool lockStableState = false;
 uint8_t lockStableSamples = 0;
 const uint8_t LOCK_STABLE_SAMPLES = 6;
 const unsigned long LOCK_RETRIGGER_BLOCK_MS = 1000;
-const unsigned long SENSOR_POST_INTERVAL_MS = 60000;
+const unsigned long SENSOR_POST_INTERVAL_MS = 20000;
+const uint8_t TEMP_READ_RETRIES = 3;
+const unsigned long TEMP_CONVERSION_DELAY_MS = 750;
 
 // Prototypes
 void sendSensorsValues();
@@ -55,6 +57,10 @@ void setup()
   Serial.begin(9600);
   Wire.begin(4,16);
   sensors.begin();
+  // Prime the first DS18B20 conversion so early loop reads are valid.
+  sensors.requestTemperatures();
+  delay(TEMP_CONVERSION_DELAY_MS);
+  sensors.getTempCByIndex(0);
   pinMode(interruptPin, INPUT_PULLUP);
   lockStableState = !digitalRead(interruptPin);
   lockCandidateState = lockStableState;
@@ -88,8 +94,22 @@ void sendSensorsValues()
     return;
   }
 
-  sensors.requestTemperatures();
-  float temperature = sensors.getTempCByIndex(0);
+  float temperature = DEVICE_DISCONNECTED_C;
+  for (uint8_t attempt = 0; attempt < TEMP_READ_RETRIES; attempt++) {
+    sensors.requestTemperatures();
+    delay(TEMP_CONVERSION_DELAY_MS);
+    temperature = sensors.getTempCByIndex(0);
+    if (temperature != DEVICE_DISCONNECTED_C) {
+      break;
+    }
+    Serial.println("Invalid DS18B20 reading (-127C), retrying...");
+  }
+
+  if (temperature == DEVICE_DISCONNECTED_C) {
+    Serial.println("Skipping POST: temperature sensor returned -127C.");
+    return;
+  }
+
   float pressure = bme.readPressure() / 100.0F;
   float altitude = bme.readAltitude(SEALEVELPRESSURE_HPA);
   float humidity = bme.readHumidity();

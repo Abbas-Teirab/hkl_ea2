@@ -62,7 +62,7 @@ export class SensorReading {
   );
   altitude_thresholds = {
     '0': { color: 'green' },
-    '30': { color: 'orange' },
-    '60': { color: 'red' },
+    '80': { color: 'orange' },
+    '90': { color: 'red' },
   };
 }

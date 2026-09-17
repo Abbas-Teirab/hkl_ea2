@@ -1,0 +1,18 @@
+@use '@angular/material' as mat;
+
+mat-card {
+  @include mat.card-overrides(
+    (
+      filled-container-color: white,
+      elevated-container-color: white,
+    )
+  );
+}
+
+mat-form-field {
+  @include mat.form-field-overrides(
+    (
+      filled-container-color: white,
+    )
+  );
+}

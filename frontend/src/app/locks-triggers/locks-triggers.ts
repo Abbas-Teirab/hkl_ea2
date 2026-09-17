@@ -13,6 +13,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { LocksStore } from '../stores/locks.store';
 import { Lock } from '../interfaces/locks';
+import { DatePipe } from '@angular/common';
 
 @Component({
   imports: [
@@ -27,6 +28,7 @@ import { Lock } from '../interfaces/locks';
     MatPaginatorModule,
     MatTooltipModule,
     FormField,
+    DatePipe,
   ],
   selector: 'app-locks-triggers',
   styleUrl: './locks-triggers.scss',
@@ -37,7 +39,7 @@ export class LocksTriggers {
   private readonly snackBar = inject(MatSnackBar);
   private locksStore = inject(LocksStore);
 
-  protected readonly displayedColumns = ['name', 'locked', 'created_at'];
+  protected readonly displayedColumns = ['name', 'locked', 'date', 'time'];
   protected readonly pageIndex = signal(0);
   protected readonly pageSize = signal(20);
   protected readonly filterDept = signal('');

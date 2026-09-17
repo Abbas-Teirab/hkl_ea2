@@ -39,7 +39,7 @@
       <ng-container matColumnDef="enabled">
         <th mat-header-cell *matHeaderCellDef mat-sort-header>Enabled</th>
         <td mat-cell *matCellDef="let node">
-          <mat-icon [class.green]="node.enabled" [class.red]="!node.enabled">{{
+          <mat-icon class="text-xl" [class.green]="node.enabled" [class.red]="!node.enabled">{{
             node.enabled ? 'toggle_on' : 'toggle_off'
           }}</mat-icon>
         </td>

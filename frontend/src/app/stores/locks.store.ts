@@ -17,13 +17,16 @@ export const LocksStore = signalStore(
     loading: true,
     locks: [],
   }),
-  withMethods((store, supabase: SupabaseConfig = inject(SupabaseToken)) => ({
+  withMethods((store, supabaseConfig: SupabaseConfig = inject(SupabaseToken)) => ({
     loadLocks: rxMethod<void>(
       pipe(
         tap(() => patchState(store, { loading: true })),
         switchMap(() =>
           from(
-            supabase.supabase.from('locks').select('*').order('created_at', { ascending: false }),
+            supabaseConfig.supabase
+              .from('locks')
+              .select('*')
+              .order('created_at', { ascending: false }),
           ),
         ),
         tapResponse({
