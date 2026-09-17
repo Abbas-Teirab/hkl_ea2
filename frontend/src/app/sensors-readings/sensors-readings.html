@@ -10,7 +10,7 @@
   </mat-form-field>
 </div>
 <div class="flex flex-wrap gap-4">
-  @for (sensor_reading of readings(); track sensor_reading.id) {
+  @for (sensor_reading of readings.value(); track sensor_reading.id) {
     <app-sensor-reading [sensor_reading]="sensor_reading" />
   }
 </div>

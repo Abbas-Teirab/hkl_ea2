@@ -1,7 +1,7 @@
 import { Component, inject, OnInit, OnDestroy, signal, effect } from '@angular/core';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { SupabaseToken } from '../supabase';
-import { SensorsStore } from './stores/sensors.store';
+import { notificationsStore } from './stores/notifications.store';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -33,9 +33,12 @@ import { MatDividerModule } from '@angular/material/divider';
 })
 export class App implements OnInit, OnDestroy {
   private supabaseConfig = inject(SupabaseToken);
-  private sensorsStore = inject(SensorsStore);
-  private subscription: RealtimeChannel | undefined;
-  private readonly sensorsChannelName = `sensors-${Math.random().toString(36).slice(2)}`;
+  private notificationsStore = inject(notificationsStore);
+  private sensorsSubscription: RealtimeChannel | undefined;
+  private locksSubscription: RealtimeChannel | undefined;
+
+  private readonly sensorsChannel = `sensors-${Math.random().toString(36).slice(2)}`;
+  private readonly locksChannel = `locks-${Math.random().toString(36).slice(2)}`;
 
   private readonly breakpoints = inject(BreakpointObserver);
 
@@ -62,17 +65,27 @@ export class App implements OnInit, OnDestroy {
     }
   }
   ngOnInit(): void {
-    this.subscription = this.supabaseConfig.supabase
-      .channel(this.sensorsChannelName)
+    this.sensorsSubscription = this.supabaseConfig.supabase
+      .channel(this.sensorsChannel)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'sensors' }, (payload) => {
-        this.sensorsStore.loadSensors();
+        this.notificationsStore.toggleSensorsNotifier();
+      })
+      .subscribe();
+
+    this.locksSubscription = this.supabaseConfig.supabase
+      .channel(this.locksChannel)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'locks' }, (payload) => {
+        this.notificationsStore.toggleLocksNotifier();
       })
       .subscribe();
   }
 
   ngOnDestroy(): void {
-    if (this.subscription) {
-      this.supabaseConfig.supabase.removeChannel(this.subscription);
+    if (this.sensorsSubscription) {
+      this.supabaseConfig.supabase.removeChannel(this.sensorsSubscription);
+    }
+    if (this.locksSubscription) {
+      this.supabaseConfig.supabase.removeChannel(this.locksSubscription);
     }
   }
 }

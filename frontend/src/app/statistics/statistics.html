@@ -6,8 +6,13 @@
   <mat-form-field>
     <mat-label>Select a date range</mat-label>
     <mat-date-range-input #dateRange [rangePicker]="picker" [max]="today">
-      <input matStartDate placeholder="From" class="opacity-100 text-xs" [formField]="form.from" />
-      <input matEndDate placeholder="To" class="opacity-100 text-xs" [formField]="form.to" />
+      <input
+        matStartDate
+        placeholder="From"
+        class="opacity-100 text-xs"
+        [formField]="form.from_date"
+      />
+      <input matEndDate placeholder="To" class="opacity-100 text-xs" [formField]="form.to_date" />
     </mat-date-range-input>
     <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
     <mat-date-range-picker #picker />

@@ -3,6 +3,22 @@
     <mat-icon>history</mat-icon>
     <h1 class="text-2xl font-bold">{{ id() }} History</h1>
   </div>
+  <div>
+    <mat-form-field>
+      <mat-label>Select a date range</mat-label>
+      <mat-date-range-input #dateRange [rangePicker]="picker" [max]="today">
+        <input
+          matStartDate
+          placeholder="From"
+          class="opacity-100 text-xs"
+          [formField]="form.from_date"
+        />
+        <input matEndDate placeholder="To" class="opacity-100 text-xs" [formField]="form.to_date" />
+      </mat-date-range-input>
+      <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+      <mat-date-range-picker #picker />
+    </mat-form-field>
+  </div>
   @if (loading()) {
     <mat-spinner />
   } @else {
@@ -73,7 +89,7 @@
       [length]="history.value().length"
       [pageSize]="pageSize()"
       [pageIndex]="pageIndex()"
-      [pageSizeOptions]="[10, 20, 50]"
+      [pageSizeOptions]="[5, 10, 20]"
       (page)="onPage($event)"
       aria-label="Nodes pagination"
     />

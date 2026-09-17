@@ -1,4 +1,4 @@
-<div class="w-240">
+<div class="w-160">
   <div class="py-4 mb-4 flex items-center gap-x-2">
     <mat-icon>hub</mat-icon>
     <h1 class="text-2xl font-bold">Nodes Configuration</h1>
@@ -39,9 +39,12 @@
       <ng-container matColumnDef="enabled">
         <th mat-header-cell *matHeaderCellDef mat-sort-header>Enabled</th>
         <td mat-cell *matCellDef="let node">
-          <mat-icon class="text-xl" [class.green]="node.enabled" [class.red]="!node.enabled">{{
-            node.enabled ? 'toggle_on' : 'toggle_off'
-          }}</mat-icon>
+          <mat-icon
+            [class.green]="node.enabled"
+            [class.red]="!node.enabled"
+            class="!w-12 !h-12 !text-4xl"
+            >{{ node.enabled ? 'toggle_on' : 'toggle_off' }}</mat-icon
+          >
         </td>
       </ng-container>
 
