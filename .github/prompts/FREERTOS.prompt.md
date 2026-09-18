@@ -16,6 +16,7 @@
 ## Task 2
 
 - Send sensor data to the Supabase database table `sensors` at intervals defined by `SENSOR_POST_INTERVAL_MS`. Ensure that the data is sent reliably and handle any potential errors during transmission.
+- When bootingup, check `nodes` table for `transmission_period` and update `SENSOR_POST_INTERVAL_MS` accordingly. Retry 3 times if the initial check fails with intervals of 10 seconds between each retry.
 - Data must not be sent to `sensors` table if there is no entry in `nodes` table with `name` equal to local `name` variable
 - Data must not be sent to `sensors` table if there is there an entry in `nodes` table with `name` equal to local `name` variable, but `enabled` is false.
 

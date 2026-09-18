@@ -1,77 +1,66 @@
-## Plan: ESP32 FreeRTOS Supabase Refactor
+## Plan: ESP32 FreeRTOS + Supabase (Updated)
 
-Convert the current single-loop firmware into a dual-core FreeRTOS design where sensor capture, lock interrupt handling, and network I/O are separated into tasks. Keep Ethernet-only transport, replace raw HTTP posting with ESPSupabase for writes, and implement nodes-driven runtime control (transmission_period and enabled) so sensor publishing is gated by nodes state.
+Refactor ESP32/src/main.cpp from single-loop flow into a dual-core FreeRTOS design that uses Ethernet-only communication, queue-based task handoff, and synchronized shared state. Replace legacy HTTP POST logic inside sendJsonPost with jhagas/ESPSupabase (or a compatible Supabase client if needed), and enforce nodes-table-driven runtime behavior for transmission interval and sensor send eligibility.
 
-**Steps**
+**Implementation Plan**
 
-1. Phase 1 - Dependency and baseline setup
-2. Update ESP32/platformio.ini to add ESPSupabase and an explicit websocket client dependency for non-SSL realtime (HTTP/WS local gateway).
-3. In ESP32/src/main.cpp, keep existing sensor/lock logic behavior as baseline references from sendSensorsValues, processLockInput, WiFiEvent, and onLockChange, but move orchestration out of loop.
-4. Convert SENSOR_POST_INTERVAL_MS from compile-time constant to mutable runtime state with bounds (for example min and max guardrails) and store as milliseconds.
-5. Phase 2 - Runtime state, synchronization, and IPC
-6. Define a shared runtime state structure for ethConnected, nodeExists, nodeEnabled, transmissionPeriodMs, and lockStableState; protect state reads/writes with a mutex.
-7. Create FreeRTOS queues:
-8. One outbound queue for data write requests to Supabase (sensor payloads and lock payloads).
-9. One config-update queue for node changes coming from realtime callback and periodic reconciliation.
-10. Use an EventGroup (or equivalent flags) for ETH_UP and NODE_ALLOWED_TO_SEND gates so producer tasks can cheaply check eligibility.
-11. Phase 3 - Task architecture and core pinning
-12. Pin network-heavy tasks to Core 0:
-13. RealtimeRxTask: websocket subscription loop and message handling.
-14. SupabaseTxTask: single writer task that performs all Supabase REST writes from outbound queue.
-15. Pin hardware/logic tasks to Core 1:
-16. SensorTask: periodic DS18B20+BME280 read and enqueue sensor payload.
-17. LockTask: waits for ISR notification, debounces lock input, enqueues lock payload on real state change.
-18. Add a low-frequency NodeReconcileTask (Core 1 or Core 0 low priority) to query nodes by name and recover from missed realtime events or row deletion scenarios.
-19. Keep loop minimal (idle delay only), with no business logic.
-20. Phase 4 - Supabase integration changes
-21. Replace sendJsonPost internals to use ESPSupabase REST methods instead of manual WiFiClient request assembly:
-22. Map requested path/table target and call Supabase insert or query-builder flow.
-23. Return HTTP code compatibility so existing callers can keep the same success/failure handling pattern.
-24. Move direct network calls out of sendSensorsValues and sendLockState; these functions should prepare JSON and enqueue to SupabaseTxTask.
-25. Implement retry policy in SupabaseTxTask (bounded retries + backoff + logging) for reliable delivery without blocking sensor and lock tasks.
-26. Phase 5 - Nodes-driven control (Task 1 and Task 2 constraints)
-27. On startup, perform a nodes lookup by exact name and select latest matching row (deterministic ordering + limit).
-28. If no matching nodes row exists, set nodeExists false and block sensor publishing.
-29. If matching row exists but enabled is false, block sensor publishing.
-30. For matching row updates (INSERT/UPDATE), parse transmission_period and enabled then atomically update shared runtime state.
-31. Because you selected seconds as input unit, convert transmission_period seconds to transmissionPeriodMs before storing.
-32. Realtime receive path for local HTTP/WS endpoint:
-33. Use a suitable non-SSL websocket approach for postgres_changes subscription on nodes with filter name equals local node name.
-34. Keep ESPSupabase for write path to satisfy sendJsonPost replacement requirement.
-35. Phase 6 - Interrupt handling (Task 3)
-36. Replace lockChangePending polling handshake with direct ISR-to-task notification:
-37. ISR only signals LockTask using vTaskNotifyGiveFromISR and optional context switch yield.
-38. LockTask performs debounce and retrigger lockout (preserving current behavior intent from processLockInput).
-39. LockTask publishes lock state changes through outbound queue; SupabaseTxTask performs the actual database write.
-40. Phase 7 - Database and environment compatibility checks
-41. Ensure nodes table changes are available to realtime subscriptions in your Supabase setup (publication and API exposure as needed for your deployment mode).
-42. Validate local gateway compatibility for ESPSupabase write path and chosen websocket receive path under Ethernet networking.
+1. Phase 1 - Dependencies and baseline prep
+2. Update ESP32/platformio.ini to include jhagas/ESPSupabase and any required transport dependency for Supabase realtime over Ethernet.
+3. Keep current business behavior in main.cpp as reference (sensor sampling, lock handling, Ethernet status), then move orchestration into FreeRTOS tasks.
+4. Convert SENSOR_POST_INTERVAL_MS from fixed constant to mutable runtime value (milliseconds) stored in shared state.
+5. Phase 2 - Shared state, synchronization, and IPC
+6. Create a RuntimeState object with fields: ethConnected, nodeExists, nodeEnabled, transmissionPeriodMs, and other shared flags.
+7. Protect RuntimeState with a mutex (or binary semaphore used as mutex) for all read/write access.
+8. Create queues for inter-task communication:
+9. Queue A: outbound database write requests (sensor and lock payloads).
+10. Queue B: node configuration updates from startup query and realtime events.
+11. Optionally use EventGroup bits for fast gating checks (ETH_CONNECTED, NODE_ALLOWED_TO_SEND).
+12. Phase 3 - Task split and core assignment
+13. Pin network-focused tasks to Core 0:
+14. RealtimeTask: subscribe to nodes INSERT/UPDATE and parse updates.
+15. SupabaseWriteTask: single writer task for all DB writes and retry handling.
+16. Pin hardware/logic tasks to Core 1:
+17. SensorTask: periodic sensor read and queue publish request.
+18. LockTask: waits for ISR notification, debounces, and queues lock event payload.
+19. StartupNodeCheckTask (or startup step before scheduler): query nodes by name with retry policy.
+20. Keep loop() minimal (idle delay only).
+21. Phase 4 - Supabase API integration update
+22. Refactor sendJsonPost to call ESPSupabase APIs instead of manual HTTP request assembly.
+23. Keep a compatible return contract (success/failure status) so upstream callers can preserve existing control flow.
+24. Move direct network I/O out of producer logic: producers only build payload and enqueue; SupabaseWriteTask performs transmission.
+25. Add bounded retry + backoff in SupabaseWriteTask to improve reliability for transient Ethernet/API failures.
+26. Phase 5 - Task requirements mapping
+27. Task 1 (Realtime nodes updates)
+28. Listen to Supabase realtime INSERT/UPDATE on nodes.
+29. If incoming row name equals local name variable, update transmissionPeriodMs from transmission_period, then apply to SENSOR_POST_INTERVAL_MS runtime value.
+30. Task 2 (Sensor posting with startup checks and gating)
+31. On boot, query nodes by local name and update transmission period from transmission_period.
+32. If startup query fails, retry exactly 3 times with 10-second wait between retries.
+33. Permit sensor writes only when both are true: nodeExists and nodeEnabled.
+34. Block sensor writes when no matching nodes row exists.
+35. Block sensor writes when matching nodes row exists but enabled is false.
+36. Send sensor rows to sensors table at the current SENSOR_POST_INTERVAL_MS cadence when allowed.
+37. Task 3 (Interrupt handling)
+38. ISR for interruptPin must only notify the designated FreeRTOS task (no heavy work inside ISR).
+39. LockTask receives notification, processes debounce/state logic, then queues resulting event.
+40. Phase 6 - Supabase skill usage and validation
+41. Use Supabase SKILL guidance to validate realtime subscription behavior, table access expectations, and write/query patterns.
+42. Validate end-to-end behavior under Ethernet-only operation.
 
-**Relevant files**
+**Relevant Files**
 
-- c:/Users/abees/Documents/squ/hkl_ea2/ESP32/src/main.cpp - convert orchestration from loop to FreeRTOS tasks; refactor sendJsonPost, sendSensorsValues, sendLockState, processLockInput, WiFiEvent, onLockChange.
-- c:/Users/abees/Documents/squ/hkl_ea2/ESP32/platformio.ini - add required libraries for ESPSupabase and realtime websocket client.
-- c:/Users/abees/Documents/squ/hkl_ea2/supabase/db-initialization.txt - verify nodes participation in realtime publication and table/API accessibility assumptions.
+- ESP32/src/main.cpp - main refactor target for tasks, queues, ISR notification, and sendJsonPost update.
+- ESP32/platformio.ini - dependency updates for ESPSupabase and realtime support.
+- supabase/db-initialization.txt - verify nodes/sensors schema assumptions for runtime gating and updates.
 
-**Verification**
+**Verification Checklist**
 
-1. Build check: run PlatformIO build for env esp32_wroom_da and ensure no compile/link errors.
-2. Boot check: verify Ethernet comes up, tasks start on intended cores, and no watchdog resets.
-3. Nodes gating check (no row): with no matching nodes.name, confirm sensor payloads are not sent.
-4. Nodes gating check (disabled): with matching nodes row and enabled false, confirm sensor payloads are not sent.
-5. Nodes gating check (enabled): set enabled true and confirm sensor payloads begin flowing.
-6. Realtime period update check: update nodes.transmission_period and confirm next publish cadence changes accordingly.
-7. Lock ISR check: toggle interruptPin input and confirm LockTask receives notifications and publishes lock events once per debounced transition.
-8. Reliability check: temporarily drop Ethernet or API reachability and confirm retry/backoff behavior without task starvation.
-
-**Decisions**
-
-- transmission_period will be interpreted as seconds and converted to milliseconds in firmware runtime state.
-- Supabase endpoint is HTTP/WS local only, so realtime receive will use a suitable non-SSL websocket path; ESPSupabase will be used for write path and sendJsonPost replacement.
-- Firmware will continue using service role key in-device as requested.
-- Scope is firmware-focused; no frontend or data migration changes are included.
-
-**Further Considerations**
-
-1. Security hardening follow-up: migrate from service role key to anon key plus explicit policies when operational requirements allow.
-2. Optional maintainability follow-up: split main.cpp into task modules after functional parity is confirmed.
+1. PlatformIO build passes for esp32_wroom_da.
+2. Device boots with Ethernet connected and both cores running assigned tasks.
+3. Startup nodes query follows 3 retries at 10-second intervals on failure.
+4. With no matching nodes.name, sensors rows are not sent.
+5. With matching nodes.name and enabled=false, sensors rows are not sent.
+6. With matching nodes.name and enabled=true, sensors rows are sent at SENSOR_POST_INTERVAL_MS interval.
+7. Updating nodes.transmission_period for matching name changes next sensor send cadence.
+8. interruptPin transitions trigger ISR notification and LockTask processing without blocking or watchdog issues.
+9. Temporary network/API failures show retry/backoff behavior while producer tasks remain responsive.
