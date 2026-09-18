@@ -35,6 +35,12 @@
         <td mat-cell *matCellDef="let node">{{ node.location }}</td>
       </ng-container>
 
+      <!-- Transmission Period Column -->
+      <ng-container matColumnDef="transmission_period">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Transmission Period (sec)</th>
+        <td mat-cell *matCellDef="let node">{{ node.transmission_period }}</td>
+      </ng-container>
+
       <!-- Enabled Column -->
       <ng-container matColumnDef="enabled">
         <th mat-header-cell *matHeaderCellDef mat-sort-header>Enabled</th>

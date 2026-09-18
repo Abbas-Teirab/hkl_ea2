@@ -1,6 +1,6 @@
 import { Component, inject, effect, Signal, signal, computed } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { FormField, form, required, minLength } from '@angular/forms/signals';
+import { FormField, form, required, minLength, min } from '@angular/forms/signals';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -36,6 +36,7 @@ export class NodeDialog {
   model = signal<Node>({
     name: '',
     location: '',
+    transmission_period: 60,
     enabled: true,
   });
 
@@ -44,6 +45,8 @@ export class NodeDialog {
     minLength(schema.name, 3);
     required(schema.location);
     minLength(schema.location, 3);
+    required(schema.transmission_period);
+    min(schema.transmission_period, 1);
   });
 
   initializeForm() {
@@ -53,6 +56,7 @@ export class NodeDialog {
       name: node?.name ?? '',
       location: node?.location ?? '',
       enabled: node?.enabled ?? true,
+      transmission_period: node?.transmission_period ?? 60,
     });
   }
 
@@ -63,6 +67,7 @@ export class NodeDialog {
       name: this.model().name,
       location: this.model().location,
       enabled: this.model().enabled,
+      transmission_period: this.model().transmission_period,
     };
     this.dialogRef.close(node);
   }

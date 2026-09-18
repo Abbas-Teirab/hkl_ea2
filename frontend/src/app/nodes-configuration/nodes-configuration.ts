@@ -38,7 +38,13 @@ export class NodesConfiguration {
   private readonly snackBar = inject(MatSnackBar);
   private nodesStore = inject(NodesStore);
 
-  protected readonly displayedColumns = ['name', 'location', 'enabled', 'edit'];
+  protected readonly displayedColumns = [
+    'name',
+    'location',
+    'transmission_period',
+    'enabled',
+    'edit',
+  ];
   protected readonly pageIndex = signal(0);
   protected readonly pageSize = signal(20);
   protected readonly filterDept = signal('');

@@ -5,6 +5,7 @@ CREATE TABLE nodes(
 	id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
 	name TEXT,
 	location TEXT,
+	transmission_period FLOAT DEFAULT 60,
 	enabled BOOLEAN DEFAULT TRUE,
 	created_at timestamptz DEFAULT now()
 );

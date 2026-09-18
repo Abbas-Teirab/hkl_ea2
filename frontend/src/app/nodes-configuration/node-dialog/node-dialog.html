@@ -9,6 +9,10 @@
       <mat-label>Node Location</mat-label>
       <input matInput placeholder="Ex. Location 1" [formField]="form.location" />
     </mat-form-field>
+    <mat-form-field>
+      <mat-label>Transmission Period</mat-label>
+      <input type="number" matInput placeholder="60" [formField]="form.transmission_period" />
+    </mat-form-field>
     <mat-checkbox class="example-margin" [formField]="form.enabled"> Enabled </mat-checkbox>
   </form>
   <div class="basis-full flex justify-end items-end">
