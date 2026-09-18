@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { notificationsStore } from '../stores/notifications.store';
 import { SensorReading } from './sensor-reading/sensor-reading';
 import { NodesStore } from '../stores/nodes.store';
@@ -7,10 +7,11 @@ import { MatIconModule } from '@angular/material/icon';
 import { form, FormField } from '@angular/forms/signals';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { addMinutes, format } from 'date-fns';
-import { SupabaseConfig, SupabaseToken } from '../../supabase';
+import { addMinutes } from 'date-fns';
+import { SupabaseToken } from '../../supabase';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { of, from, forkJoin, map } from 'rxjs';
+import { SupabaseClient } from '@supabase/supabase-js';
 
 @Component({
   selector: 'app-sensors-readings',
@@ -21,7 +22,7 @@ import { of, from, forkJoin, map } from 'rxjs';
 export class SensorsReadings {
   private nodesStore = inject(NodesStore);
   private notificationsStore = inject(notificationsStore);
-  private supabaseConfig: SupabaseConfig = inject(SupabaseToken);
+  private supabase: SupabaseClient = inject(SupabaseToken);
 
   readings = rxResource({
     defaultValue: [],
@@ -32,14 +33,14 @@ export class SensorsReadings {
     }),
     stream: ({ params }) => {
       const { sensors_notifier, search_term, nodes } = params;
-      const filteres_nodes = this.nodesStore
-        .nodes()
+      const filteres_nodes = nodes
         .filter((node) => node.enabled)
         .filter(
           (node) =>
             node.name.toLowerCase().includes(search_term) ||
             node.location.toLowerCase().includes(search_term),
-        );
+        )
+        .sort((a, b) => a.name.localeCompare(b.name));
 
       return filteres_nodes.length > 0
         ? forkJoin(
@@ -47,9 +48,10 @@ export class SensorsReadings {
               .map((node) => node.name)
               .map((node_name) =>
                 from(
-                  this.supabaseConfig.supabase
+                  this.supabase
                     .from('sensors')
                     .select('*')
+                    .order('created_at', { ascending: false })
                     .eq('name', node_name)
                     .limit(1),
                 ).pipe(
@@ -75,12 +77,6 @@ export class SensorsReadings {
                   created_at: addMinutes(new Date(), -10).toISOString() as string,
                 };
                 return default_reading;
-              }),
-            ),
-            map((readings) =>
-              readings.sort((a, b) => {
-                if (!a || !b) return 0;
-                return a.name.localeCompare(b.name);
               }),
             ),
           )

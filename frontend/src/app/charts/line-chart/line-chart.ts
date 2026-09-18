@@ -1,30 +1,33 @@
 import { Component, computed, input } from '@angular/core';
-import { ChartConfiguration, ChartData } from 'chart.js';
+import { ChartConfiguration, ChartData, Point } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
+import { provideNativeDateAdapter } from '@angular/material/core';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import 'chartjs-adapter-date-fns';
+
 @Component({
   imports: [BaseChartDirective],
-  selector: 'app-bar-chart',
-  styleUrl: './bar-chart.css',
-  templateUrl: './bar-chart.html',
+  selector: 'app-line-chart',
+  styleUrl: './line-chart.css',
+  templateUrl: './line-chart.html',
+  providers: [provideNativeDateAdapter()],
 })
-export class BarChart {
+export class LineChart {
   title = input<string>();
   xAxisTitle = input<string>();
+  viewXaxisTitle = input<boolean>(false);
   yAxisTitle = input<string>();
   color = input<string>();
-  barThickness = input<number>();
-  labels = input<string[]>([]);
+  timeVector = input<string[]>([]);
   values = input<number[]>([]);
 
   plugins: any[] = [ChartDataLabels];
-  options = computed<ChartConfiguration<'bar'>['options']>(() => {
+  options = computed<ChartConfiguration<'line'>['options']>(() => {
     const values = this.values();
     const max = 1.05 * Math.max(...values);
     const min = Math.min(...values) > 0 ? 0 : 1.05 * Math.min(...values);
 
-    const op: ChartConfiguration<'bar'>['options'] = {
+    const op: ChartConfiguration<'line'>['options'] = {
       animation: {
         duration: 300,
       },
@@ -32,10 +35,9 @@ export class BarChart {
       maintainAspectRatio: false,
       scales: {
         x: {
-          min: 0,
-          stacked: false,
+          type: 'time',
           title: {
-            display: true,
+            display: this.viewXaxisTitle(),
             text: this.xAxisTitle(),
             font: {
               size: 14,
@@ -51,6 +53,18 @@ export class BarChart {
               size: 10,
               family: 'Poppins',
               weight: 'bold',
+            },
+          },
+          time: {
+            displayFormats: {
+              second: 'HH:mm:ss',
+              minute: 'HH:mm:ss',
+              hour: 'ddd, HH:mm',
+              day: 'DD MMM, HH:mm',
+              week: 'll',
+              month: 'MMM YYYY',
+              quarter: 'Qo',
+              year: 'YYYY',
             },
           },
         },
@@ -116,15 +130,22 @@ export class BarChart {
 
     return op;
   });
+
   data = computed(() => {
-    const chartObj: any = {
-      labels: this.labels(),
+    const points: Point[] = this.values()
+      .map((value, index) => {
+        const iso = this.timeVector()[index];
+        const timestamp = iso ? Date.parse(iso) : NaN;
+        return { x: timestamp, y: value };
+      })
+      .filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y));
+
+    const chartObj: ChartData<'line'> = {
       datasets: [
         {
-          type: 'bar',
-          data: [...this.values()],
+          type: 'line',
+          data: points,
           backgroundColor: [this.color()],
-          barThickness: this.barThickness(),
           yAxisID: 'y',
         },
       ],

@@ -1,5 +1,5 @@
 import { Component, computed, resource, inject, signal } from '@angular/core';
-import { BubbleChart } from './bubble-chart/bubble-chart';
+import { BubbleChart } from '../charts/bubble-chart/bubble-chart';
 import { notificationsStore } from '../stores/notifications.store';
 import { NodesStore } from '../stores/nodes.store';
 import { MatCardModule } from '@angular/material/card';
@@ -8,12 +8,13 @@ import { form, FormField } from '@angular/forms/signals';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { startOfDay, endOfDay, format } from 'date-fns';
-import { BarChart } from './bar-chart/bar-chart';
+import { BarChart } from '../charts/bar-chart/bar-chart';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { provideNativeDateAdapter } from '@angular/material/core';
-import { SupabaseConfig, SupabaseToken } from '../../supabase';
+import { SupabaseToken } from '../../supabase';
 import { Sensor } from '../interfaces/sensors';
 import { formatISO } from 'date-fns';
+import { SupabaseClient } from '@supabase/supabase-js';
 
 @Component({
   imports: [
@@ -34,7 +35,7 @@ import { formatISO } from 'date-fns';
 export class Statistics {
   private nodesStore = inject(NodesStore);
   private notificationsStore = inject(notificationsStore);
-  private supabaseConfig: SupabaseConfig = inject(SupabaseToken);
+  private supabase: SupabaseClient = inject(SupabaseToken);
 
   today = format(new Date(), 'yyyy-MM-dd');
 
@@ -53,7 +54,7 @@ export class Statistics {
       const from = formatISO(startOfDay(new Date(from_date)));
       const to = formatISO(endOfDay(new Date(to_date)));
 
-      const { data, error } = await this.supabaseConfig.supabase
+      const { data, error } = await this.supabase
         .from('sensors')
         .select('*')
         .gte('created_at', from) // Start date (inclusive)

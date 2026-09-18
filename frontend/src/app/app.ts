@@ -1,5 +1,5 @@
 import { Component, inject, OnInit, OnDestroy, signal, effect } from '@angular/core';
-import { RealtimeChannel } from '@supabase/supabase-js';
+import { RealtimeChannel, SupabaseClient } from '@supabase/supabase-js';
 import { SupabaseToken } from '../supabase';
 import { notificationsStore } from './stores/notifications.store';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
@@ -32,7 +32,7 @@ import { MatDividerModule } from '@angular/material/divider';
   ],
 })
 export class App implements OnInit, OnDestroy {
-  private supabaseConfig = inject(SupabaseToken);
+  private supabase: SupabaseClient = inject(SupabaseToken);
   private notificationsStore = inject(notificationsStore);
   private sensorsSubscription: RealtimeChannel | undefined;
   private locksSubscription: RealtimeChannel | undefined;
@@ -65,14 +65,14 @@ export class App implements OnInit, OnDestroy {
     }
   }
   ngOnInit(): void {
-    this.sensorsSubscription = this.supabaseConfig.supabase
+    this.sensorsSubscription = this.supabase
       .channel(this.sensorsChannel)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'sensors' }, (payload) => {
         this.notificationsStore.toggleSensorsNotifier();
       })
       .subscribe();
 
-    this.locksSubscription = this.supabaseConfig.supabase
+    this.locksSubscription = this.supabase
       .channel(this.locksChannel)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'locks' }, (payload) => {
         this.notificationsStore.toggleLocksNotifier();
@@ -82,10 +82,10 @@ export class App implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     if (this.sensorsSubscription) {
-      this.supabaseConfig.supabase.removeChannel(this.sensorsSubscription);
+      this.supabase.removeChannel(this.sensorsSubscription);
     }
     if (this.locksSubscription) {
-      this.supabaseConfig.supabase.removeChannel(this.locksSubscription);
+      this.supabase.removeChannel(this.locksSubscription);
     }
   }
 }

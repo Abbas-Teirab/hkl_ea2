@@ -31,6 +31,10 @@ export const routes: Routes = [
         loadComponent: () => import('../statistics/statistics').then((m) => m.Statistics),
       },
       {
+        path: 'data-export',
+        loadComponent: () => import('../data-export/data-export').then((m) => m.DataExport),
+      },
+      {
         path: 'sensors-readings/:id',
         loadComponent: () =>
           import('../sensors-readings/sensors-history-readings/sensors-history-readings').then(

@@ -2,10 +2,11 @@ import { signalStore, withState, withMethods, withHooks, patchState } from '@ngr
 import { tapResponse } from '@ngrx/operators';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { inject } from '@angular/core';
-import { SupabaseConfig, SupabaseToken } from '../../supabase';
+import { SupabaseToken } from '../../supabase';
 import { switchMap, tap } from 'rxjs/operators';
 import { from, pipe } from 'rxjs';
 import { Node } from '../interfaces/nodes';
+import { SupabaseClient } from '@supabase/supabase-js';
 
 interface NodesState {
   loading: boolean;
@@ -17,23 +18,18 @@ export const NodesStore = signalStore(
     loading: true,
     nodes: [],
   }),
-  withMethods((store, supabaseConfig: SupabaseConfig = inject(SupabaseToken)) => ({
+  withMethods((store, supabase: SupabaseClient = inject(SupabaseToken)) => ({
     createNode: async (node: Node) => {
-      const { data, error } = await supabaseConfig.supabase.from('nodes').insert(node);
+      const { data, error } = await supabase.from('nodes').insert(node);
     },
     updateNode: async (node: Node) => {
-      const { data, error } = await supabaseConfig.supabase
-        .from('nodes')
-        .update(node)
-        .eq('id', node.id);
+      const { data, error } = await supabase.from('nodes').update(node).eq('id', node.id);
     },
     loadNodes: rxMethod<void>(
       pipe(
         tap(() => patchState(store, { loading: true })),
         switchMap(() =>
-          from(
-            supabaseConfig.supabase.from('nodes').select('*').order('name', { ascending: true }),
-          ),
+          from(supabase.from('nodes').select('*').order('name', { ascending: true })),
         ),
         tapResponse({
           next: ({ data, error }) => patchState(store, { loading: false, nodes: data ?? [] }),

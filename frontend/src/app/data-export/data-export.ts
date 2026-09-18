@@ -1,13 +1,12 @@
-import { Component, input, resource, inject, signal, computed, viewChild } from '@angular/core';
+import { Component, resource, inject, signal, computed, viewChild } from '@angular/core';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
-import { notificationsStore } from '../../stores/notifications.store';
 import { MatPaginator, MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatSortModule, Sort } from '@angular/material/sort';
-import { Sensor } from '../../interfaces/sensors';
+import { Sensor } from '../interfaces/sensors';
 import { DatePipe } from '@angular/common';
-import { SupabaseToken } from '../../../supabase';
+import { SupabaseToken } from '../../supabase';
 import { endOfDay, format, formatISO, startOfDay } from 'date-fns';
 import { form, FormField } from '@angular/forms/signals';
 import { MatDatepickerModule } from '@angular/material/datepicker';
@@ -15,34 +14,38 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { provideNativeDateAdapter } from '@angular/material/core';
 import { SupabaseClient } from '@supabase/supabase-js';
-import { LineChart } from '../../charts/line-chart/line-chart';
-import { MatCardModule } from '@angular/material/card';
+import { notificationsStore } from '../stores/notifications.store';
+import { NodesStore } from '../stores/nodes.store';
+import { MatButtonModule } from '@angular/material/button';
+import * as XLSX from 'xlsx';
 
 @Component({
   imports: [
-    LineChart,
-    DatePipe,
     MatProgressSpinnerModule,
+    MatButtonModule,
     MatIconModule,
     MatPaginatorModule,
     MatTableModule,
     MatSortModule,
     MatDatepickerModule,
     MatFormFieldModule,
-    MatCardModule,
     MatInputModule,
     FormField,
+    DatePipe,
   ],
-  selector: 'app-sensors-history-readings',
-  styleUrl: './sensors-history-readings.scss',
-  templateUrl: './sensors-history-readings.html',
+  selector: 'app-data-export',
+  styleUrl: './data-export.scss',
+  templateUrl: './data-export.html',
   providers: [provideNativeDateAdapter()],
 })
-export class SensorsHistoryReadings {
+export class DataExport {
   private notificationsStore = inject(notificationsStore);
+  private nodesStore = inject(NodesStore);
   private supabase: SupabaseClient = inject(SupabaseToken);
 
   protected readonly displayedColumns = [
+    'node',
+    'location',
     'date',
     'time',
     'temperature',
@@ -57,42 +60,41 @@ export class SensorsHistoryReadings {
   protected readonly filterStatus = signal('');
   protected readonly sortField = signal<keyof Sensor>('name');
   protected readonly sortDir = signal<'asc' | 'desc'>('asc');
-  id = input<string>();
+
   paginator = viewChild<MatPaginator>(MatPaginator);
 
   history = resource({
     defaultValue: [],
     params: () => ({
-      id: this.id(),
       sensors_notifier: this.notificationsStore.sensors_notifier(),
       from_date: this.model().from_date,
       to_date: this.model().to_date,
+      nodes: this.nodesStore.nodes(),
     }),
     loader: async ({ params }) => {
-      const { id, sensors_notifier, from_date, to_date } = params;
-      if (!id) {
-        return [];
-      }
+      const { sensors_notifier, from_date, to_date, nodes } = params;
       const from = formatISO(startOfDay(new Date(from_date)));
       const to = formatISO(endOfDay(new Date(to_date)));
       const { data, error } = await this.supabase
         .from('sensors')
         .select('*')
-        .eq('name', id)
+        .order('created_at', { ascending: false })
         .gte('created_at', from) // Start date (inclusive)
         .lte('created_at', to); // End date (inclusive)
 
       const list: Sensor[] = data ?? [];
-      const field = this.sortField();
-      const dir = this.sortDir() === 'asc' ? 1 : -1;
-      const sorted_list = list.sort((a, b) => {
-        const av = a[field] ?? '';
-        const bv = b[field] ?? '';
-        return av < bv ? -dir : av > bv ? dir : 0;
-      });
-      return sorted_list;
+      return list;
     },
   });
+
+  locations = computed(() =>
+    this.history
+      .value()
+      .map(
+        (sensor) =>
+          this.nodesStore.nodes().find((node) => node.name === sensor.name)?.location ?? '',
+      ),
+  );
 
   datasource = computed(() => {
     const source = new MatTableDataSource<Sensor>(this.history.value());
@@ -101,13 +103,6 @@ export class SensorsHistoryReadings {
     }
     return source;
   });
-
-  time_vector = computed(() => this.history.value().map((item) => item.created_at ?? ''));
-
-  temperatures = computed(() => this.history.value().map((item) => item.temperature ?? ''));
-  humidities = computed(() => this.history.value().map((item) => item.humidity ?? ''));
-  pressures = computed(() => this.history.value().map((item) => item.pressure ?? ''));
-  altitudes = computed(() => this.history.value().map((item) => item.altitude ?? ''));
 
   loading = computed(() => this.history.isLoading());
 
@@ -125,8 +120,58 @@ export class SensorsHistoryReadings {
     }
     this.pageIndex.set(0);
   }
+
   protected onPage(e: PageEvent) {
     this.pageIndex.set(e.pageIndex);
     this.pageSize.set(e.pageSize);
+  }
+
+  async exportData() {
+    const templatePath = '/sensors.xlsx';
+    const toSheet = (rows: Record<string, unknown>[]) =>
+      XLSX.utils.json_to_sheet(rows.length ? rows : []);
+    try {
+      const response = await fetch(templatePath, { cache: 'no-store' });
+      if (!response.ok) {
+        throw new Error(`Template workbook not found at ${templatePath}`);
+      }
+
+      const contentType = response.headers.get('content-type') ?? '';
+      if (contentType.includes('text/html')) {
+        throw new Error(
+          `Template request returned HTML instead of XLSX. Verify ${templatePath} exists in frontend/public.`,
+        );
+      }
+
+      const buffer = await response.arrayBuffer();
+      const workbook = XLSX.read(buffer, { type: 'array' });
+      const sensorRows = this.history.value().map((sensor) => ({
+        id: sensor.id,
+        node: sensor.name,
+        date: format(new Date(sensor.created_at ?? ''), 'dd MMM yyyy'),
+        time: format(new Date(sensor.created_at ?? ''), 'HH:mm:ss'),
+        ip_address: sensor.ip_address,
+        locked: sensor.locked,
+        temperature: sensor.temperature,
+        humidity: sensor.humidity,
+        pressure: sensor.pressure,
+        altitude: sensor.altitude,
+      }));
+      workbook.Sheets['Sensors'] = toSheet(sensorRows);
+
+      const wbBuffer = XLSX.write(workbook, {
+        bookType: 'xlsx',
+        type: 'array',
+      });
+      const blob = new Blob([wbBuffer], { type: 'application/octet-stream' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `sensors_${format(new Date(), 'yyyy-MM-dd_HH-mm-ss')}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.log(error);
+    }
   }
 }

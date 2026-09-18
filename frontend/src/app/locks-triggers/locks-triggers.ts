@@ -3,22 +3,22 @@ import { FormField, form } from '@angular/forms/signals';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatDialogModule } from '@angular/material/dialog';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatPaginator, MatPaginatorModule, PageEvent } from '@angular/material/paginator';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { Lock } from '../interfaces/locks';
 import { DatePipe } from '@angular/common';
 import { notificationsStore } from '../stores/notifications.store';
-import { SupabaseConfig, SupabaseToken } from '../../supabase';
+import { SupabaseToken } from '../../supabase';
 import { endOfDay, format, formatISO, startOfDay } from 'date-fns';
 import { NodesStore } from '../stores/nodes.store';
 import { provideNativeDateAdapter } from '@angular/material/core';
 import { MatDatepickerModule } from '@angular/material/datepicker';
+import { SupabaseClient } from '@supabase/supabase-js';
 
 @Component({
   imports: [
@@ -44,7 +44,7 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 export class LocksTriggers {
   private notificationsStore = inject(notificationsStore);
   private nodesStore = inject(NodesStore);
-  private supabaseConfig: SupabaseConfig = inject(SupabaseToken);
+  private supabase: SupabaseClient = inject(SupabaseToken);
 
   protected readonly displayedColumns = ['name', 'location', 'locked', 'date', 'time'];
   protected readonly pageIndex = signal(0);
@@ -74,7 +74,7 @@ export class LocksTriggers {
       const from = formatISO(startOfDay(new Date(from_date)));
       const to = formatISO(endOfDay(new Date(to_date)));
 
-      const { data, error } = await this.supabaseConfig.supabase
+      const { data, error } = await this.supabase
         .from('locks')
         .select('*')
         .gte('created_at', from) // Start date (inclusive)

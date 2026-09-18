@@ -1,4 +1,4 @@
-<mat-card button class="card w-140 h-64 cursor-pointer" [routerLink]="['./', node()?.name]">
+<mat-card button class="card w-140 h-70 cursor-pointer" [routerLink]="['./', node()?.name]">
   <div class="p-4 flex items-center justify-between">
     <div class="flex items-center gap-x-1">
       <mat-icon [class.green]="is_online()" [class.red]="!is_online()">{{
@@ -9,7 +9,7 @@
           {{ node()?.name }}
         </span>
         <br />
-        <span class="text-xs">{{ sensor_reading()?.ip_address }}</span>
+        <span class="text-xs">{{ sensor_reading()?.ip_address ?? 'N/A' }}</span>
       </div>
     </div>
     <div class="flex justify-end items-center gap-x-1">
@@ -19,11 +19,11 @@
   </div>
   <mat-card-content>
     @if (sensor_reading()?.ip_address === 'N/A') {
-      <div class="h-32 italic flex justify-center items-center text-center text-gray-700">
+      <div class="h-36 italic flex justify-center items-center text-center text-gray-700">
         Data is not available for this node!
       </div>
     } @else {
-      <div class="h-32 flex justify-evenly items-center">
+      <div class="h-36 flex justify-evenly items-center">
         <div class="flex flex-col items-center">
           <ngx-gauge
             type="full"
@@ -91,6 +91,12 @@
         <mat-icon>watch_later</mat-icon>
         <span class="text-xs">
           {{ sensor_reading().created_at | date: 'HH:mm:ss' }}
+        </span>
+      </div>
+      <div class="flex justify-end items-center gap-x-1">
+        <mat-icon>hourglass_bottom</mat-icon>
+        <span class="text-xs">
+          {{ last_reading() }}
         </span>
       </div>
     </div>

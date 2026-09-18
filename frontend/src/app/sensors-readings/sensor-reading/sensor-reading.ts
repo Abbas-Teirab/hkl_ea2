@@ -6,7 +6,7 @@ import { Sensor } from '../../interfaces/sensors';
 import { formatNumber, DatePipe } from '@angular/common';
 import { NodesStore } from '../../stores/nodes.store';
 import { RouterLink } from '@angular/router';
-import { addMinutes, differenceInMinutes } from 'date-fns';
+import { addMinutes, differenceInMinutes, formatDistanceToNow } from 'date-fns';
 
 @Component({
   imports: [MatCardModule, MatIconModule, NgxGaugeModule, DatePipe, RouterLink],
@@ -20,7 +20,11 @@ export class SensorReading {
   thick = 4;
 
   sensor_reading = input.required<Sensor>();
-
+  last_reading = computed(() =>
+    this.sensor_reading().created_at
+      ? formatDistanceToNow(new Date(this.sensor_reading().created_at as string))
+      : 'N/A',
+  );
   node = computed(() =>
     this.nodes_store.nodes().find((n) => n.name === this.sensor_reading().name),
   );
@@ -49,7 +53,7 @@ export class SensorReading {
   };
   //-------------------------------------------------
   formatted_pressure_value = computed(() =>
-    parseFloat(formatNumber(this.sensor_reading().pressure, 'en-US', '2.2-2')),
+    parseFloat(formatNumber(this.sensor_reading().pressure / 1000, 'en-US', '2.2-2')),
   );
   pressure_thresholds = {
     '0': { color: 'green' },
