@@ -1,7 +1,7 @@
 <div class="w-160">
   <div class="py-4 mb-4 flex items-center gap-x-2">
-    <mat-icon>hub</mat-icon>
-    <h1 class="text-2xl font-bold">Nodes Configuration</h1>
+    <mat-icon>settings</mat-icon>
+    <h1 class="text-2xl font-bold">Settings</h1>
   </div>
   <div class="flex items-center justify-between">
     <mat-form-field>
@@ -25,7 +25,7 @@
     >
       <!-- Name Column -->
       <ng-container matColumnDef="name">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Name</th>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Node Name</th>
         <td mat-cell *matCellDef="let node">{{ node.name }}</td>
       </ng-container>
 

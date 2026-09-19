@@ -34,9 +34,11 @@ import { MatDividerModule } from '@angular/material/divider';
 export class App implements OnInit, OnDestroy {
   private supabase: SupabaseClient = inject(SupabaseToken);
   private notificationsStore = inject(notificationsStore);
+  private nodesSubscription: RealtimeChannel | undefined;
   private sensorsSubscription: RealtimeChannel | undefined;
   private locksSubscription: RealtimeChannel | undefined;
 
+  private readonly nodesChannel = `nodes-${Math.random().toString(36).slice(2)}`;
   private readonly sensorsChannel = `sensors-${Math.random().toString(36).slice(2)}`;
   private readonly locksChannel = `locks-${Math.random().toString(36).slice(2)}`;
 
@@ -65,6 +67,13 @@ export class App implements OnInit, OnDestroy {
     }
   }
   ngOnInit(): void {
+    this.nodesSubscription = this.supabase
+      .channel(this.nodesChannel)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'nodes' }, (payload) => {
+        this.notificationsStore.toggleNodesNotifier();
+      })
+      .subscribe();
+
     this.sensorsSubscription = this.supabase
       .channel(this.sensorsChannel)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'sensors' }, (payload) => {
@@ -81,6 +90,9 @@ export class App implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    if (this.nodesSubscription) {
+      this.supabase.removeChannel(this.nodesSubscription);
+    }
     if (this.sensorsSubscription) {
       this.supabase.removeChannel(this.sensorsSubscription);
     }

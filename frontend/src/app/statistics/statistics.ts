@@ -1,7 +1,6 @@
 import { Component, computed, resource, inject, signal } from '@angular/core';
 import { BubbleChart } from '../charts/bubble-chart/bubble-chart';
 import { notificationsStore } from '../stores/notifications.store';
-import { NodesStore } from '../stores/nodes.store';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { form, FormField } from '@angular/forms/signals';
@@ -33,19 +32,31 @@ import { SupabaseClient } from '@supabase/supabase-js';
   providers: [provideNativeDateAdapter()],
 })
 export class Statistics {
-  private nodesStore = inject(NodesStore);
   private notificationsStore = inject(notificationsStore);
   private supabase: SupabaseClient = inject(SupabaseToken);
 
   today = format(new Date(), 'yyyy-MM-dd');
 
-  nodes = this.nodesStore.nodes;
+  nodes = resource({
+    defaultValue: [],
+    params: () => ({
+      nodes_notifier: this.notificationsStore.nodes_notifier(),
+    }),
+    loader: async ({ params }) => {
+      const { nodes_notifier } = params;
+      const { data: nodes } = await this.supabase
+        .from('nodes')
+        .select('*')
+        .order('name', { ascending: true });
+      return nodes ?? [];
+    },
+  });
 
   readings = resource({
     defaultValue: [],
     params: () => ({
       sensors_notifier: this.notificationsStore.sensors_notifier(),
-      nodes: this.nodes(),
+      nodes: this.nodes.value(),
       from_date: this.model().from_date,
       to_date: this.model().to_date,
     }),
@@ -69,7 +80,7 @@ export class Statistics {
   });
 
   average_temperatures = computed(() =>
-    this.nodes().map((node, index) => {
+    this.nodes.value().map((node, index) => {
       const readings = this.readings.value()[index] ?? [];
       const temperatures = readings.map((sensor) => sensor.temperature);
       const sum = temperatures.reduce((acc, curr) => acc + curr, 0);
@@ -80,7 +91,7 @@ export class Statistics {
   max_average_temperature = computed(() => Math.max(...this.average_temperatures()));
 
   average_humidity = computed(() =>
-    this.nodes().map((node, index) => {
+    this.nodes.value().map((node, index) => {
       const readings = this.readings.value()[index] ?? [];
       const humidity = readings.map((sensor) => sensor.humidity);
       const sum = humidity.reduce((acc, curr) => acc + curr, 0);
@@ -90,7 +101,7 @@ export class Statistics {
 
   max_average_humidity = computed(() => Math.max(...this.average_humidity()));
   average_pressure = computed(() =>
-    this.nodes().map((node, index) => {
+    this.nodes.value().map((node, index) => {
       const readings = this.readings.value()[index] ?? [];
       const pressure = readings.map((sensor) => sensor.pressure);
       const sum = pressure.reduce((acc, curr) => acc + curr, 0);
@@ -99,7 +110,7 @@ export class Statistics {
   );
 
   average_altitude = computed(() =>
-    this.nodes().map((node, index) => {
+    this.nodes.value().map((node, index) => {
       const readings = this.readings.value()[index] ?? [];
       const altitude = readings.map((sensor) => sensor.altitude);
       const sum = altitude.reduce((acc, curr) => acc + curr, 0);
@@ -108,7 +119,7 @@ export class Statistics {
   );
 
   bubble_values = computed(() =>
-    this.nodes().map((node, index) => {
+    this.nodes.value().map((node, index) => {
       const average_temperature = this.average_temperatures()[index] ?? 0;
       const average_humidity = this.average_humidity()[index] ?? 0;
       const average_pressure = (5 * (this.average_pressure()[index] ?? 0)) / 1000;
@@ -120,6 +131,8 @@ export class Statistics {
       return val;
     }),
   );
+
+  loading = computed(() => this.nodes.isLoading() || this.readings.isLoading());
 
   model = signal({
     from_date: new Date().toISOString(),

@@ -1,6 +1,5 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, resource, signal } from '@angular/core';
 import { FormField, form } from '@angular/forms/signals';
-import { NodesStore } from '../stores/nodes.store';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -14,6 +13,9 @@ import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { Node } from '../interfaces/nodes';
 import { NodeDialog } from './node-dialog/node-dialog';
+import { notificationsStore } from '../stores/notifications.store';
+import { SupabaseClient } from '@supabase/supabase-js';
+import { SupabaseToken } from '../../supabase';
 
 @Component({
   imports: [
@@ -29,14 +31,14 @@ import { NodeDialog } from './node-dialog/node-dialog';
     MatTooltipModule,
     FormField,
   ],
-  selector: 'app-nodes-configuration',
-  styleUrl: './nodes-configuration.scss',
-  templateUrl: './nodes-configuration.html',
+  selector: 'app-settings',
+  styleUrl: './settings.scss',
+  templateUrl: './settings.html',
 })
-export class NodesConfiguration {
+export class Settings {
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
-  private nodesStore = inject(NodesStore);
+  private notificationsStore = inject(notificationsStore);
 
   protected readonly displayedColumns = [
     'name',
@@ -53,28 +55,38 @@ export class NodesConfiguration {
   protected readonly sortField = signal<keyof Node>('name');
   protected readonly sortDir = signal<'asc' | 'desc'>('asc');
   private dialog_loading = signal(false);
+  private supabase: SupabaseClient = inject(SupabaseToken);
 
-  nodes = computed(() => {
-    const search_term = this.model().search.toLowerCase() ?? '';
-    const list = this.nodesStore
-      .nodes()
-      .filter(
+  nodes = resource({
+    defaultValue: [],
+    params: () => ({
+      search_term: this.model().search,
+      nodes_notifier: this.notificationsStore.nodes_notifier(),
+    }),
+    loader: async ({ params }) => {
+      const { nodes_notifier, search_term } = params;
+      const { data: nodes } = await this.supabase
+        .from('nodes')
+        .select('*')
+        .order('name', { ascending: true });
+      const list = (nodes ?? []).filter(
         (node) =>
-          node.name.toLowerCase().includes(search_term) ||
-          node.location.toLowerCase().includes(search_term) ||
-          node.enabled.toString().toLowerCase().includes(search_term),
+          node.name.toLowerCase().includes(search_term.toLowerCase()) ||
+          node.location.toLowerCase().includes(search_term.toLowerCase()) ||
+          node.enabled.toString().toLowerCase().includes(search_term.toLowerCase()),
       );
-    const field = this.sortField();
-    const dir = this.sortDir() === 'asc' ? 1 : -1;
-    return list.sort((a, b) => {
-      const av = a[field] ?? '';
-      const bv = b[field] ?? '';
-      return av < bv ? -dir : av > bv ? dir : 0;
-    });
+      const field = this.sortField();
+      const dir = this.sortDir() === 'asc' ? 1 : -1;
+      return list.sort((a, b) => {
+        const av = a[field] ?? '';
+        const bv = b[field] ?? '';
+        return av < bv ? -dir : av > bv ? dir : 0;
+      });
+    },
   });
 
-  datasource = computed(() => this.nodes());
-  loading = computed(() => this.nodesStore.loading() || this.dialog_loading());
+  datasource = computed(() => this.nodes.value());
+  loading = computed(() => this.nodes.isLoading() || this.dialog_loading());
 
   model = signal({
     search: '',
@@ -93,13 +105,25 @@ export class NodesConfiguration {
       if (!result) return;
       this.dialog_loading.set(true);
       if (result.id) {
-        await this.nodesStore.updateNode(result);
+        await this.supabase
+          .from('nodes')
+          .update({
+            name: result.name,
+            location: result.location,
+            enabled: result.enabled,
+          })
+          .eq('id', result.id);
+        this.notificationsStore.toggleNodesNotifier();
       } else {
-        await this.nodesStore.createNode(result);
+        await this.supabase.from('nodes').insert({
+          name: result.name,
+          location: result.location,
+          enabled: result.enabled,
+        });
+        this.notificationsStore.toggleNodesNotifier();
       }
       this.snackBar.open('Node saved successfully', 'Close', { duration: 3000 });
       this.dialog_loading.set(false);
-      this.nodesStore.loadNodes();
     });
   }
   protected onSort(sort: Sort) {

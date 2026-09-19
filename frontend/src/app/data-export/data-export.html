@@ -18,7 +18,12 @@
       <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
       <mat-date-range-picker #picker />
     </mat-form-field>
-    <button matButton="filled" color="primary" (click)="exportData()">
+    <button
+      matButton="filled"
+      color="primary"
+      [disabled]="history.value().length === 0"
+      (click)="exportData()"
+    >
       <mat-icon>download</mat-icon> Export
     </button>
   </div>

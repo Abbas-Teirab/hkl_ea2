@@ -32,7 +32,7 @@
         [maxX]="100"
         [minY]="0"
         [maxY]="100"
-        [legends]="nodes().map((node) => node.name)"
+        [legends]="nodes.value().map((node) => node.name)"
         [values]="bubble_values()"
       />
     </mat-card-content>
@@ -51,7 +51,7 @@
         [yAxisTitle]="'Temperature (°C)'"
         [color]="'#FF6384'"
         [barThickness]="14"
-        [labels]="nodes().map((node) => node.name)"
+        [labels]="nodes.value().map((node) => node.name)"
         [values]="average_temperatures()"
       />
     </mat-card-content>
@@ -68,7 +68,7 @@
         [yAxisTitle]="'Humidity (%)'"
         [color]="'#36A2EB'"
         [barThickness]="14"
-        [labels]="nodes().map((node) => node.name)"
+        [labels]="nodes.value().map((node) => node.name)"
         [values]="average_humidity()"
       />
     </mat-card-content>
@@ -85,7 +85,7 @@
         [yAxisTitle]="'Pressure (hPa)'"
         [color]="'#FFCE56'"
         [barThickness]="14"
-        [labels]="nodes().map((node) => node.name)"
+        [labels]="nodes.value().map((node) => node.name)"
         [values]="average_pressure()"
       />
     </mat-card-content>
@@ -102,7 +102,7 @@
         [yAxisTitle]="'Altitude (m)'"
         [color]="'#4BC0C0'"
         [barThickness]="14"
-        [labels]="nodes().map((node) => node.name)"
+        [labels]="nodes.value().map((node) => node.name)"
         [values]="average_altitude()"
       />
     </mat-card-content>

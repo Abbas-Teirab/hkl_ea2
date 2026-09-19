@@ -1,7 +1,6 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, resource, signal } from '@angular/core';
 import { notificationsStore } from '../stores/notifications.store';
 import { SensorReading } from './sensor-reading/sensor-reading';
-import { NodesStore } from '../stores/nodes.store';
 import { Sensor } from '../interfaces/sensors';
 import { MatIconModule } from '@angular/material/icon';
 import { form, FormField } from '@angular/forms/signals';
@@ -20,19 +19,34 @@ import { SupabaseClient } from '@supabase/supabase-js';
   imports: [FormField, MatFormFieldModule, MatInputModule, MatIconModule, SensorReading],
 })
 export class SensorsReadings {
-  private nodesStore = inject(NodesStore);
   private notificationsStore = inject(notificationsStore);
   private supabase: SupabaseClient = inject(SupabaseToken);
+
+  nodes = resource({
+    defaultValue: [],
+    params: () => ({
+      nodes_notifier: this.notificationsStore.nodes_notifier(),
+    }),
+    loader: async ({ params }) => {
+      const { nodes_notifier } = params;
+      const { data: nodes } = await this.supabase
+        .from('nodes')
+        .select('*')
+        .order('name', { ascending: true });
+      return nodes ?? [];
+    },
+  });
 
   readings = rxResource({
     defaultValue: [],
     params: () => ({
       search_term: this.model().search.toLowerCase() ?? '',
+      nodes_notifier: this.notificationsStore.nodes_notifier(),
       sensors_notifier: this.notificationsStore.sensors_notifier(),
-      nodes: this.nodesStore.nodes(),
+      nodes: this.nodes.value(),
     }),
     stream: ({ params }) => {
-      const { sensors_notifier, search_term, nodes } = params;
+      const { nodes_notifier, sensors_notifier, search_term, nodes } = params;
       const filteres_nodes = nodes
         .filter((node) => node.enabled)
         .filter(
@@ -83,6 +97,8 @@ export class SensorsReadings {
         : of([]);
     },
   });
+
+  loading = computed(() => this.nodes.isLoading() || this.readings.isLoading());
 
   model = signal({
     search: '',

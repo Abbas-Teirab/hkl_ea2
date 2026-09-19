@@ -12,9 +12,8 @@ export const routes: Routes = [
     component: Main,
     children: [
       {
-        path: 'nodes-configuration',
-        loadComponent: () =>
-          import('../nodes-configuration/nodes-configuration').then((m) => m.NodesConfiguration),
+        path: 'settings',
+        loadComponent: () => import('../settings/settings').then((m) => m.Settings),
       },
       {
         path: 'sensors-readings',
@@ -25,6 +24,10 @@ export const routes: Routes = [
         path: 'locks-triggers',
         loadComponent: () =>
           import('../locks-triggers/locks-triggers').then((m) => m.LocksTriggers),
+      },
+      {
+        path: 'health-check',
+        loadComponent: () => import('../health-check/health-check').then((m) => m.HealthCheck),
       },
       {
         path: 'statistics',

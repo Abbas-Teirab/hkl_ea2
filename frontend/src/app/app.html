@@ -32,14 +32,24 @@
         <span matListItemTitle>Statistics</span>
       </a>
       <a
+        [disabled]="true"
         mat-list-item
         routerLinkActive="active-link"
-        [routerLink]="'/main/nodes-configuration'"
         [routerLinkActiveOptions]="{ exact: true }"
         (click)="closeSidenavOnMobile()"
       >
-        <mat-icon matListItemIcon>hub</mat-icon>
-        <span matListItemTitle>Nodes Configuration</span>
+        <mat-icon matListItemIcon>monitor_heart</mat-icon>
+        <span matListItemTitle>Health Check</span>
+      </a>
+      <a
+        mat-list-item
+        routerLinkActive="active-link"
+        [routerLink]="'/main/settings'"
+        [routerLinkActiveOptions]="{ exact: true }"
+        (click)="closeSidenavOnMobile()"
+      >
+        <mat-icon matListItemIcon>settings</mat-icon>
+        <span matListItemTitle>Settings</span>
       </a>
       <a
         mat-list-item

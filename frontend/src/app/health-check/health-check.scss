@@ -1,0 +1,17 @@
+@use '@angular/material' as mat;
+
+mat-form-field {
+  @include mat.form-field-overrides(
+    (
+      filled-container-color: white,
+    )
+  );
+}
+
+.red {
+  color: red;
+}
+
+.green {
+  color: green;
+}

@@ -15,7 +15,6 @@ import { MatInputModule } from '@angular/material/input';
 import { provideNativeDateAdapter } from '@angular/material/core';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { notificationsStore } from '../stores/notifications.store';
-import { NodesStore } from '../stores/nodes.store';
 import { MatButtonModule } from '@angular/material/button';
 import * as XLSX from 'xlsx';
 
@@ -40,7 +39,6 @@ import * as XLSX from 'xlsx';
 })
 export class DataExport {
   private notificationsStore = inject(notificationsStore);
-  private nodesStore = inject(NodesStore);
   private supabase: SupabaseClient = inject(SupabaseToken);
 
   protected readonly displayedColumns = [
@@ -63,13 +61,28 @@ export class DataExport {
 
   paginator = viewChild<MatPaginator>(MatPaginator);
 
+  nodes = resource({
+    defaultValue: [],
+    params: () => ({
+      nodes_notifier: this.notificationsStore.nodes_notifier(),
+    }),
+    loader: async ({ params }) => {
+      const { nodes_notifier } = params;
+      const { data: nodes } = await this.supabase
+        .from('nodes')
+        .select('*')
+        .order('name', { ascending: true });
+      return nodes ?? [];
+    },
+  });
+
   history = resource({
     defaultValue: [],
     params: () => ({
       sensors_notifier: this.notificationsStore.sensors_notifier(),
       from_date: this.model().from_date,
       to_date: this.model().to_date,
-      nodes: this.nodesStore.nodes(),
+      nodes: this.nodes.value(),
     }),
     loader: async ({ params }) => {
       const { sensors_notifier, from_date, to_date, nodes } = params;
@@ -91,8 +104,7 @@ export class DataExport {
     this.history
       .value()
       .map(
-        (sensor) =>
-          this.nodesStore.nodes().find((node) => node.name === sensor.name)?.location ?? '',
+        (sensor) => this.nodes.value().find((node) => node.name === sensor.name)?.location ?? '',
       ),
   );
 
@@ -104,7 +116,7 @@ export class DataExport {
     return source;
   });
 
-  loading = computed(() => this.history.isLoading());
+  loading = computed(() => this.history.isLoading() || this.nodes.isLoading());
 
   model = signal({
     from_date: new Date().toISOString(),

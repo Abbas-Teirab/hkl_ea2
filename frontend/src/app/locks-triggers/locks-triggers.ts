@@ -15,7 +15,6 @@ import { DatePipe } from '@angular/common';
 import { notificationsStore } from '../stores/notifications.store';
 import { SupabaseToken } from '../../supabase';
 import { endOfDay, format, formatISO, startOfDay } from 'date-fns';
-import { NodesStore } from '../stores/nodes.store';
 import { provideNativeDateAdapter } from '@angular/material/core';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { SupabaseClient } from '@supabase/supabase-js';
@@ -43,7 +42,6 @@ import { SupabaseClient } from '@supabase/supabase-js';
 })
 export class LocksTriggers {
   private notificationsStore = inject(notificationsStore);
-  private nodesStore = inject(NodesStore);
   private supabase: SupabaseClient = inject(SupabaseToken);
 
   protected readonly displayedColumns = ['name', 'location', 'locked', 'date', 'time'];
@@ -56,7 +54,20 @@ export class LocksTriggers {
   protected readonly sortDir = signal<'asc' | 'desc'>('asc');
 
   today = format(new Date(), 'yyyy-MM-dd');
-  nodes = this.nodesStore.nodes;
+  nodes = resource({
+    defaultValue: [],
+    params: () => ({
+      nodes_notifier: this.notificationsStore.nodes_notifier(),
+    }),
+    loader: async ({ params }) => {
+      const { nodes_notifier } = params;
+      const { data: nodes } = await this.supabase
+        .from('nodes')
+        .select('*')
+        .order('name', { ascending: true });
+      return nodes ?? [];
+    },
+  });
   loading = computed(() => this.locks.isLoading());
   paginator = viewChild<MatPaginator>(MatPaginator);
 
@@ -67,7 +78,7 @@ export class LocksTriggers {
       locks_notifier: this.notificationsStore.locks_notifier(),
       from_date: this.model().from_date,
       to_date: this.model().to_date,
-      nodes: this.nodesStore.nodes(),
+      nodes: this.nodes.value(),
     }),
     loader: async ({ params }) => {
       const { search_term, from_date, to_date, nodes } = params;
@@ -104,7 +115,7 @@ export class LocksTriggers {
 
   locations = computed(() =>
     this.locks.value().map((lock) => {
-      const node = this.nodes().find((node) => node.name === lock.name);
+      const node = this.nodes.value().find((node) => node.name === lock.name);
       return node?.location ?? '';
     }),
   );

@@ -1,13 +1,12 @@
-import { Component, computed, inject, input } from '@angular/core';
+import { Component, computed, inject, input, resource } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { NgxGaugeModule } from 'ngx-gauge';
 import { Sensor } from '../../interfaces/sensors';
+import { Node } from '../../interfaces/nodes';
 import { formatNumber, DatePipe } from '@angular/common';
-import { NodesStore } from '../../stores/nodes.store';
 import { RouterLink } from '@angular/router';
 import { addMinutes, differenceInMinutes, formatDistanceToNow } from 'date-fns';
-
 @Component({
   imports: [MatCardModule, MatIconModule, NgxGaugeModule, DatePipe, RouterLink],
   selector: 'app-sensor-reading',
@@ -15,19 +14,18 @@ import { addMinutes, differenceInMinutes, formatDistanceToNow } from 'date-fns';
   templateUrl: './sensor-reading.html',
 })
 export class SensorReading {
-  private nodes_store = inject(NodesStore);
   size = 100;
   thick = 4;
 
+  nodes = input<Node[]>([]);
   sensor_reading = input.required<Sensor>();
   last_reading = computed(() =>
     this.sensor_reading().created_at
       ? formatDistanceToNow(new Date(this.sensor_reading().created_at as string))
       : 'N/A',
   );
-  node = computed(() =>
-    this.nodes_store.nodes().find((n) => n.name === this.sensor_reading().name),
-  );
+  node = computed(() => this.nodes().find((node) => node.name === this.sensor_reading().name));
+
   is_online = computed(() => {
     const creation = this.sensor_reading().created_at
       ? new Date(this.sensor_reading().created_at as string)
